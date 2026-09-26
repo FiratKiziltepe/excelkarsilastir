@@ -6,12 +6,36 @@ from __future__ import annotations
 
 import hashlib
 import os
+import sys
 from dataclasses import replace
 from datetime import datetime
 
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
+
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def _refresh_excel_diff() -> None:
+    """Paket dosyaları değiştiyse bellekteki eski excel_diff modüllerini at.
+
+    Streamlit Cloud yeni commit'i çekip app.py'yi yeniden çalıştırdığında daha önce
+    içe aktarılmış alt modüller eski sürümde kalabiliyor (ör. yeni alanı olmayan
+    Filters sınıfı -> TypeError). Dosya damgası değişince paket baştan yüklenir.
+    """
+    pkg = os.path.join(APP_DIR, "excel_diff")
+    stamp = tuple(sorted((f, os.stat(os.path.join(pkg, f)).st_mtime_ns)
+                         for f in os.listdir(pkg) if f.endswith(".py")))
+    loaded = sys.modules.get("excel_diff")
+    if loaded is not None and getattr(loaded, "_source_stamp", None) != stamp:
+        for name in [m for m in sys.modules if m == "excel_diff" or m.startswith("excel_diff.")]:
+            del sys.modules[name]
+    import excel_diff
+    excel_diff._source_stamp = stamp
+
+
+_refresh_excel_diff()
 
 from excel_diff import Settings, auto_map, compare_tables, guess_roles, read_table, sheet_names
 from excel_diff.filtering import Filters, filter_sections
@@ -20,7 +44,6 @@ from excel_diff.model import (ALL_CATEGORIES, CAT_ADDED, CAT_DELETED, CAT_FORMAT
 from excel_diff.render_html import report_html, side_by_side_html
 from excel_diff.render_pdf import report_pdf
 
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
 SAMPLES = ("eskiprogram.xlsx", "Guncelprogram.xlsx")
 NONE = "(yok)"
 

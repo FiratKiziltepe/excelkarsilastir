@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Excel veri dosyaları ve Office kilit dosyaları
+*.xlsx
+*.xlsm
+*.xls
+~$*
+
+# IDE
+.idea/
+.vscode/

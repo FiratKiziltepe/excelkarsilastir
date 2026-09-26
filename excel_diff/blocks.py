@@ -30,6 +30,10 @@ def split_blocks(t: Table, side: str, group_col: str | None, order_col: str | No
     prev_order: int | None = None
     for idx, row in enumerate(t.rows):
         g = norm_ws(row[gi]) if gi is not None else "Tümü"
+        if not g and cur is not None:
+            # Boş ders hücresi (ör. unutulmuş/silinmiş) bloğu bölmesin; önceki dersin devamıdır.
+            # Hücrenin boşalması ayrıca metin farkı olarak raporlanır.
+            g = cur.group
         gk = match_key(g)
         order = _as_int(row[oi]) if oi is not None else None
         new_block = cur is None or gk != cur.group_key

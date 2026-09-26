@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+from dataclasses import replace
 from datetime import datetime
 
 import pandas as pd
@@ -52,8 +53,9 @@ def cached_compare(old_data: bytes, new_data: bytes, old_meta: tuple, new_meta: 
 
 
 @st.cache_data(show_spinner="PDF hazırlanıyor…")
-def cached_pdf(_res, res_key: str, cats: tuple, groups: tuple, query: str, title: str) -> bytes:
-    return report_pdf(_res, Filters(set(cats), set(groups), query), title)
+def cached_pdf(_res, res_key: str, cats: tuple, groups: tuple, query: str, moved_only_at_new: bool,
+               title: str) -> bytes:
+    return report_pdf(_res, Filters(set(cats), set(groups), query, moved_only_at_new), title)
 
 
 def digest(b: bytes) -> str:
@@ -224,11 +226,15 @@ with tab_side:
     components.html(html, height=height, scrolling=False)
 
 with tab_report:
-    a, b = st.columns([3, 2])
+    a, b, c = st.columns([3, 2, 2])
     title = a.text_input("Rapor başlığı", "E-İçerik Programı Değişiklik Raporu", key="rep_title")
     apply_f = b.toggle("Filtreleri rapora uygula", value=True, key="rep_apply",
                        help="Kapalıyken rapor tüm satırları içerir.")
-    rf = flt if apply_f else Filters()
+    moved_new_only = c.checkbox("Taşınanları yalnızca taşındığı yerde göster", value=True, key="rep_moved_new",
+                                help="İşaretliyken taşınan satır raporda yalnızca yeni yerinde (mor çift altı çizili) "
+                                     "görünür; eski yerindeki üstü çizili kopyası gösterilmez. "
+                                     "Eski yeri, satırın 'Değişiklikler' sütununda yazar.")
+    rf = replace(flt if apply_f else Filters(), moved_only_at_new=moved_new_only)
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
     html_doc = report_html(res, rf, title, standalone=True)
     d1, d2, _ = st.columns([1, 1, 3])
@@ -236,7 +242,8 @@ with tab_report:
                        icon=":material/download:", width="stretch")
     if d2.button("PDF oluştur (A4 yatay)", icon=":material/picture_as_pdf:", width="stretch"):
         st.session_state["pdf"] = (res_key, rf, title, cached_pdf(
-            res, res_key, tuple(sorted(rf.categories)), tuple(sorted(rf.groups)), rf.query, title))
+            res, res_key, tuple(sorted(rf.categories)), tuple(sorted(rf.groups)), rf.query,
+            rf.moved_only_at_new, title))
     pdf = st.session_state.get("pdf")
     if pdf and pdf[0] == res_key and pdf[1] == rf and pdf[2] == title:
         d2.download_button("PDF indir", pdf[3], f"degisiklik_raporu_{stamp}.pdf", "application/pdf",

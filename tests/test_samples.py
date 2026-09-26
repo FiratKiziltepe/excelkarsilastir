@@ -123,3 +123,29 @@ def test_performance_5000_rows():
     res = compare_tables(o, n, Settings(pairs, [1, 2, 3, 4, 5], **roles))
     assert time.time() - t < 15
     assert res.stats[CAT_DELETED] == len(o.rows) - len(n.rows)
+
+
+def test_moved_rows_only_at_new_position_option():
+    res, _, _ = run()
+    full = report_html(res, Filters({CAT_MOVED}))
+    short = report_html(res, Filters({CAT_MOVED}, moved_only_at_new=True))
+    assert full.count('class="r-moved mvfrom"') == 7
+    assert short.count('class="r-moved mvfrom"') == 0
+    assert short.count('class="r-moved mvto"') == 7
+    assert "yalnızca yeni yerinde" in short
+    assert report_pdf(res, Filters(moved_only_at_new=True)).startswith(b"%PDF")
+
+
+def test_empty_group_cell_does_not_split_block():
+    cols = ["SIRA NO", "DERS ADI", "ÜNİTE", "KAZANIM"]
+    rows = [["1", "Ders A", "1. Ü", "K.1. Bir"], ["2", "Ders A", "1. Ü", "K.2. İki"], ["3", "Ders A", "1. Ü", "K.3. Üç"]]
+    new_rows = [list(r) for r in rows]
+    new_rows[1][1] = ""
+    o = Table("o", "", cols, rows, [2, 3, 4])
+    n = Table("n", "", cols, new_rows, [2, 3, 4])
+    pairs = auto_map(o, n)
+    roles = guess_roles(pairs, o, n)
+    res = compare_tables(o, n, Settings(pairs, [1, 2, 3], **roles))
+    assert len(res.sections) == 1 and res.sections[0].status == "matched"
+    assert res.stats[CAT_DELETED] == 0 and res.stats[CAT_ADDED] == 0
+    assert res.stats[CAT_TEXT] == 1  # boşalan ders hücresi metin farkı

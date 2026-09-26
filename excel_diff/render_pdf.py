@@ -214,7 +214,7 @@ def report_pdf(res: CompareResult, f: Filters, title: str = "Değişiklik Raporu
                   f"Eski {st.get('Eski satır', 0)} satır, güncel {st.get('Yeni satır', 0)} satır", meta),
         Paragraph(_safe(stats), meta),
     ]
-    if f.categories or f.groups or f.query:
+    if f.categories or f.groups or f.query or f.moved_only_at_new:
         bits = []
         if f.categories:
             bits.append("Kategori: " + ", ".join(sorted(f.categories)))
@@ -222,6 +222,8 @@ def report_pdf(res: CompareResult, f: Filters, title: str = "Değişiklik Raporu
             bits.append("Ders: " + ", ".join(sorted(f.groups)))
         if f.query:
             bits.append(f"Arama: “{f.query}”")
+        if f.moved_only_at_new:
+            bits.append("Taşınan satırlar yalnızca yeni yerinde gösterilir; eski yeri 'Değişiklikler' sütununda yazar.")
         story.append(Paragraph(_safe("Filtre — " + " · ".join(bits)), meta))
     story += [Paragraph(legend, meta), Spacer(1, 4 * mm)]
 

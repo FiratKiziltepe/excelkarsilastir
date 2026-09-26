@@ -312,7 +312,7 @@ def report_html(res: CompareResult, f: Filters, title: str = "Değişiklik Rapor
     chips = "".join(f'<span class="chip {CAT_CLASS[c]}">{c}: {st.get(c, 0)}</span>'
                     for c in (CAT_TEXT, CAT_FORMAT, CAT_MOVED, CAT_DELETED, CAT_ADDED, CAT_SAME))
     flt = ""
-    if f.categories or f.groups or f.query:
+    if f.categories or f.groups or f.query or f.moved_only_at_new:
         bits = []
         if f.categories:
             bits.append("Kategori: " + ", ".join(sorted(f.categories)))
@@ -320,6 +320,8 @@ def report_html(res: CompareResult, f: Filters, title: str = "Değişiklik Rapor
             bits.append("Ders: " + ", ".join(sorted(f.groups)))
         if f.query:
             bits.append(f"Arama: “{f.query}”")
+        if f.moved_only_at_new:
+            bits.append("Taşınan satırlar yalnızca yeni yerinde gösterilir; eski yeri 'Değişiklikler' sütununda yazar.")
         flt = f'<div class="meta">Filtre — {escape(" · ".join(bits))}</div>'
     colgroup = "".join(f'<col style="width:{p:.2f}%">' for p in pct)
     now = datetime.now().strftime("%d.%m.%Y %H:%M")

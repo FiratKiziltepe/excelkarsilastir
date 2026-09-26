@@ -12,9 +12,12 @@ class Filters:
     categories: set[str] = field(default_factory=set)  # boşsa tümü
     groups: set[str] = field(default_factory=set)  # boşsa tümü
     query: str = ""
+    moved_only_at_new: bool = False  # raporda taşınan satırın eski yerindeki kopyasını gizle
 
 
 def _row_ok(r: RowResult, f: Filters, q: str) -> bool:
+    if f.moved_only_at_new and r.kind == "moved_from":
+        return False
     if f.categories and not (r.categories & f.categories):
         return False
     if q:
